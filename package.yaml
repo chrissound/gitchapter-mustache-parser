@@ -1,4 +1,4 @@
-name: mustache
+name: gitchapter-mustache
 version: '2.3.2'
 synopsis: A mustache template parser library.
 description: ! 'Allows parsing and rendering template files with mustache markup.
@@ -44,12 +44,6 @@ library:
   - TemplateHaskell
   - QuasiQuotes
   ghc-options: -Wall
-  exposed-modules:
-  - Text.Mustache
-  - Text.Mustache.Types
-  - Text.Mustache.Parser
-  - Text.Mustache.Compile
-  - Text.Mustache.Render
   dependencies:
   - parsec
   - mtl >=2.2.1
@@ -78,7 +72,7 @@ tests:
     source-dirs: test/unit
     dependencies:
     - hspec
-    - mustache
+    - gitchapter-mustache
     - unordered-containers
     - yaml
     - process
@@ -89,7 +83,7 @@ tests:
     source-dirs: test/integration
     dependencies:
     - hspec
-    - mustache
+    - gitchapter-mustache
     - unordered-containers
     - yaml
     - base-unicode-symbols

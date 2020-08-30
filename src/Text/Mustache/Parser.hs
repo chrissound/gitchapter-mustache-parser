@@ -13,26 +13,7 @@ Portability : POSIX
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TupleSections         #-}
-module Text.Mustache.Parser
-  (
-  -- * Generic parsing functions
-
-    parse, parseWithConf
-
-  -- * Configurations
-
-  , MustacheConf(..), defaultConf
-
-  -- * Parser
-
-  , Parser, MustacheState
-
-  -- * Mustache Constants
-
-  , sectionBegin, sectionEnd, invertedSectionBegin, unescape2, unescape1
-  , delimiterChange, nestingSeparator
-
-  ) where
+module Text.Mustache.Parser where
 
 
 import           Control.Monad
@@ -88,9 +69,6 @@ unescape1 = '&'
 -- | @=@
 delimiterChange :: Char
 delimiterChange = '='
--- | @.@
-nestingSeparator :: Char
-nestingSeparator = '.'
 -- | @!@
 comment :: Char
 comment = '!'
@@ -101,7 +79,7 @@ implicitIterator = '.'
 isAllowedDelimiterCharacter :: Char -> Bool
 isAllowedDelimiterCharacter =
   not . Prel.or . sequence
-    [ isSpace, isAlphaNum, (== nestingSeparator) ]
+    [ isSpace, isAlphaNum]
 allowedDelimiterCharacter :: Parser Char
 allowedDelimiterCharacter =
   satisfy isAllowedDelimiterCharacter
@@ -154,6 +132,7 @@ parseWithConf = P.runParser parseText . initState
 
 parseText :: Parser STree
 parseText = do
+  parserTrace "parseText ????"
   (MustacheState { isBeginngingOfLine }) <- getState
   if isBeginngingOfLine
     then parseLine
@@ -196,6 +175,7 @@ finishFile =
 
 parseLine :: Parser STree
 parseLine = do
+  parserTrace "parseLine"
   (MustacheState { sDelimiters = ( start, _ ) }) <- getState
   initialWhitespace <- many (oneOf " \t")
   let handleStandalone = do
@@ -253,6 +233,8 @@ continueFromTag HandledTag = parseText
 switchOnTag :: Parser ParseTagRes
 switchOnTag = do
   (MustacheState { sDelimiters = ( _, end )}) <- getState
+  --_ <- many anyChar >>= fail
+  parserTrace "switchOnTag"
 
   choice
     [ SectionBegin False <$> (try (char sectionBegin) >> genParseTagEnd mempty)
@@ -293,18 +275,17 @@ genParseTagEnd emod = do
   (MustacheState { sDelimiters = ( start, end ) }) <- getState
 
   let nEnd = emod <> end
-      disallowed = nub $ nestingSeparator : start <> end
+      disallowed = nub $ start <> end
 
       parseOne :: Parser [Text]
       parseOne = do
-
         one <- noneOf disallowed
           `manyTill` lookAhead
-            (try (spaces >> void (string nEnd))
-            <|> try (void $ char nestingSeparator))
+            (try (spaces >> void (string nEnd)))
 
-        others <- (char nestingSeparator >> parseOne)
-                  <|> (const mempty <$> (spaces >> string nEnd))
+        -- others <- (char '?' >> parseOne)
+        --           <|> (const mempty <$> (spaces >> string nEnd))
+        others <- (const mempty <$> (spaces >> string nEnd))
         return $ pack one : others
   spaces
   (try (char implicitIterator) >> spaces >> string nEnd >> return Implicit)
